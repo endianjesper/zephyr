@@ -255,9 +255,7 @@ static int mcux_lpuart_configure_init(struct device *dev,
 	lpuart_config_t uart_config;
 	LPUART_GetDefaultConfig(&uart_config);
 
-	/* Setup UART init structure */
-
-	/* Translate UART API enum to IMX enum */
+	/* Translate UART API enum to LPUART enum from HAL */
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
 		uart_config.parityMode = kLPUART_ParityDisabled;
@@ -319,13 +317,7 @@ static int mcux_lpuart_configure_init(struct device *dev,
 	uart_config.enableTx = true;
 	uart_config.enableRx = true;
 
-	/* disable interrupts */
-	unsigned int old_level = irq_lock();
-
 	LPUART_Init(config->base, &uart_config, clock_freq);
-
-	/* restore interrupt state */
-	irq_unlock(old_level);
 
 	/* update internal uart_config */
 	data->uart_config = *cfg;
@@ -345,17 +337,10 @@ static int mcux_lpuart_configure(struct device *dev,
 {
 	const struct mcux_lpuart_config *config = dev->config;
 
-	/* disable interrupts */
-	unsigned int old_level = irq_lock();
-
 	/* disable LPUART */
 	LPUART_Deinit(config->base);
 
-	/* restore interrupt state */
-	irq_unlock(old_level);
-
-	int ret;
-	ret = mcux_lpuart_configure_init(dev, cfg);
+	int ret = mcux_lpuart_configure_init(dev, cfg);
 	if (ret) {
 		return ret;
 	}
